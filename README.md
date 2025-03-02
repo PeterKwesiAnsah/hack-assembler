@@ -1,6 +1,6 @@
 # Hack Assembler
 
-An assembler for an HDL-like symbolic code called the Hack machine language described in the [Elements of Computing Systems (Nand2Tetris)](https://mitpress.mit.edu/books/elements-computing-systems-second-edition). The assembler converts symbolic programs into their binary representations in ASCII for the Hack computer, written in C.
+An assembler for an HDL-like symbolic code called the Hack machine language described in the [Elements of Computing Systems (Nand2Tetris)](https://mitpress.mit.edu/books/elements-computing-systems-second-edition). The assembler, written in C converts symbolic programs into their binary representations in ASCII for the Hack computer.
 
 ## How does it work?
 
