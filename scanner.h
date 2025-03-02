@@ -1,5 +1,3 @@
-//first pass label declarations...takes a pointer to a symTable
-//second pass address variables...takes a pointer to a symTable
 #ifndef SCANNER_H
 #include "parser.h"
 #define SCANNER_H
