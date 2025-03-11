@@ -1,7 +1,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/_types/_null.h>
 #include "tokenizer.h"
 
 

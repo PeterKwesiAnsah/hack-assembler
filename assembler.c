@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <sys/_types/_null.h>
 #include "tokenizer.h"
 #include "parser.h"
 #include "symbolTable.h"
