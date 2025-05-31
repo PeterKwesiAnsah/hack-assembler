@@ -17,9 +17,9 @@ typedef struct {   \
         void *ptr = malloc(DEFAULT_SLICE_CAP*size); \
         if (ptr!=NULL) { \
             slice.cap=allocap;  \
-            slice.array=ptr;    \
-            slice.array[slice.len++]=el;    \
-        }else{ fputs(stderr,"Not enough memory"); exit(1); } \
-    }\
+            slice.arr=ptr;    \
+            slice.arr[slice.len++]=el;\
+        }else{ fputs("Not enough memory",stderr); exit(1); } \
+    } else{ slice.arr[slice.len++]=el; } \
 } while(0)
 #endif
