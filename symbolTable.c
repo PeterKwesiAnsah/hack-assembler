@@ -4,10 +4,9 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/_types/_null.h>
 #define FILL_KVN(node)  node->key=key;\
                         node->value=value;\
-                        return &node->value;\
+                        return node;\
 
 
 struct symTable hackLangTable = {
@@ -61,38 +60,36 @@ struct KVN *createKVN(struct KVN *head){
     return new;
 };
 
-unsigned int *getSymValue(char *key){
+ struct KVN  *getSymValue(char *key){
      if (!key) return NULL;
     //search and find in predefined table
     for (int i=0;i<PRE_DEFINED_TABLE_SIZE;i++){
         if(strcmp(key, hackLangTable.predefined[i].key)==0){
-            return &hackLangTable.predefined[i].value;
+            return &(hackLangTable.predefined[i]);
         }
     }
     unsigned tableIndex=hash(key);
     struct KVN *cur=&hackLangTable.runtime[tableIndex];
     if(cur->value==0){
-        return NULL;
+        return cur;
     }
     while(cur){
         if(strcmp(key, cur->key)==0){
-            return &cur->value;
+            return cur;
         }
         cur=cur->next;
     }
     return NULL;
 };
 
-unsigned int *setSymValue(char *key, unsigned int value){
+struct KVN *setSymValue(char *key, unsigned int value){
     unsigned tableIndex=hash(key);
     struct KVN *head=&hackLangTable.runtime[tableIndex];
-    if(getSymValue(key)==NULL){
-    //no entry for such key found
-     if(head->value==0){
-      FILL_KVN(head)
-     }
+    struct KVN *node=getSymValue(key);
+    if(node==NULL){
      struct KVN *new=createKVN(head);
       FILL_KVN(new)
+    }else{
+        FILL_KVN(node)
     }
-    return NULL;
 };

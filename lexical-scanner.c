@@ -4,6 +4,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <memory.h>
+#include <stdio.h>
+#include <string.h>
+#include "symbolTable.h"
 
 
 
@@ -11,6 +14,7 @@ ScannerTokens tkns;
 int line=0,clabel=0,variable=16;
 ScannerTokens scanner(char *source,int len){
     struct Arena *amemory=create_arena(1024);
+    struct symTable *table=initSymTable();
     int start=0,current=0;
     while(current<len){
         start=current;
@@ -34,16 +38,25 @@ ScannerTokens scanner(char *source,int len){
             tptr->lexeme[lexemeLen]='\0';
             tptr->len=lexemeLen;
 
-            //tptr->lexeme=(&source[start])+1;
             //append to slice
             append(tkns, tptr, (sizeof(struct token *)));
             //TODO: if token is ID we insert into a symbol tabel
+            if(isID)
+                setSymValue(tptr->lexeme, variable++);
         break;
         }
-        case '(':
+        case '(':{
             //Ldec
-            while((source[current++]!=')'));
+            for(;(source[current]!=')');current++);
+            char *lexeme=(char *)aalloc(amemory,((&source[current])-(&source[start]+1))+1);
+            memcpy(lexeme,(&source[start]+1),((&source[current])-(&source[start]+1)));
+            const size_t lexemeLen=((&source[current])-(&source[start]+1));
+            lexeme[lexemeLen]='\0';
             //insert into a symbol tabel
+            setSymValue(lexeme, clabel+1);
+            //skip over ')'
+            current++;
+        }
          break;
          case '/':{
             char nextchar=source[current];
@@ -57,10 +70,12 @@ ScannerTokens scanner(char *source,int len){
 
             // skip over '*'
             current++;
-
-            while((source[current++]!='*'));
-            //skip over '/'
-            current++;
+            while((source[current]!='*')){
+                if(source[current++]=='\n')
+                    line++;
+            };
+            //skip over '*/'
+            current=current+2;
             break;
          }
        	case ' ':
@@ -85,6 +100,7 @@ ScannerTokens scanner(char *source,int len){
                 }
             }
             if(destOp){
+                clabel++;
               //create dest token
               const size_t lexemeLen=destOp-(&source[start]);
               //+1 for null character
@@ -98,7 +114,6 @@ ScannerTokens scanner(char *source,int len){
               tptr->lexeme[lexemeLen]='\0';
               tptr->len=lexemeLen;
 
-              //tptr->lexeme=&source[start];
               //append to slice
               append(tkns, tptr, (sizeof(struct token *)));
               {
@@ -116,7 +131,6 @@ ScannerTokens scanner(char *source,int len){
                   //null character
                   tptr->lexeme[lexemeLen]='\0';
 
-                  //tptr->lexeme=destOp+1;
                   //append to slice
                   append(tkns, tptr, (sizeof(struct token *)));
               }
@@ -148,7 +162,6 @@ ScannerTokens scanner(char *source,int len){
                     //null character
                     tptr->lexeme[lexemeLen]='\0';
 
-                    //tptr->lexeme=&source[start];
                     //append to slice
                     append(tkns, tptr, (sizeof(struct token *)));
                 }
@@ -164,8 +177,6 @@ ScannerTokens scanner(char *source,int len){
                 //null character
                 tptr->lexeme[lexemeLen]='\0';
 
-
-                //tptr->lexeme=jumpOp+1;
                 //append to tokens slice
                 append(tkns, tptr, (sizeof(struct token *)));
             }else {

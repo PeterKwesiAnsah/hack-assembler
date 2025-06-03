@@ -7,14 +7,11 @@ struct KVN {
     struct KVN *next;
 };
 struct symTable {
-    struct {
-        char *key;
-        unsigned int value;
-    } predefined[PRE_DEFINED_TABLE_SIZE];
+    struct KVN predefined[PRE_DEFINED_TABLE_SIZE];
     struct KVN *runtime;
 };
-unsigned int *getSymValue(char *);
-unsigned int *setSymValue(char *,unsigned int);
+struct KVN *getSymValue(char *);
+struct KVN *setSymValue(char *,unsigned int);
 struct symTable *initSymTable(void);
 #endif
 //int * get(const char *key)
