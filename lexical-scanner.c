@@ -1,6 +1,7 @@
 #include "lexical-scanner.h"
 #include "arena.h"
 #include "darray.h"
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <memory.h>
@@ -10,8 +11,9 @@
 
 
 
-ScannerTokens tkns;
-int line=0,clabel=0,variable=16;
+ScannerTokens tkns={0,0,NULL};
+
+unsigned int line=0,clabel=-1;
 ScannerTokens scanner(char *source,int len){
     struct Arena *amemory=create_arena(1024);
     struct symTable *table=initSymTable();
@@ -24,7 +26,7 @@ ScannerTokens scanner(char *source,int len){
         case '@':{
             clabel++;
             char isID=!isdigit(source[current]);
-            for(;(source[current]!='\n');current++);
+            for(;(source[current]!='\n' && source[current]!=EOF );current++);
             const size_t lexemeLen =(&source[current])-((&source[start])+1);
             //create ID or Number token
             // +1 for null character
@@ -40,9 +42,6 @@ ScannerTokens scanner(char *source,int len){
 
             //append to slice
             append(tkns, tptr, (sizeof(struct token *)));
-            //TODO: if token is ID we insert into a symbol tabel
-            if(isID)
-                setSymValue(tptr->lexeme, variable++);
         break;
         }
         case '(':{
@@ -52,30 +51,15 @@ ScannerTokens scanner(char *source,int len){
             memcpy(lexeme,(&source[start]+1),((&source[current])-(&source[start]+1)));
             const size_t lexemeLen=((&source[current])-(&source[start]+1));
             lexeme[lexemeLen]='\0';
-            //insert into a symbol tabel
+            //build a symtable for label declaration
             setSymValue(lexeme, clabel+1);
             //skip over ')'
             current++;
+            break;
         }
-         break;
          case '/':{
-            char nextchar=source[current];
             //line comment
-            if(nextchar=='/'){
-                for(;(source[current]!='\n');current++);
-                break;
-            }
-            //single block comment
-            //if(nextchar!='*')//wrong syntax, we don't worry about syntax error for now.
-
-            // skip over '*'
-            current++;
-            while((source[current]!='*')){
-                if(source[current++]=='\n')
-                    line++;
-            };
-            //skip over '*/'
-            current=current+2;
+            for(;(source[current]!='\n' && source[current]!=EOF);current++);
             break;
          }
        	case ' ':
@@ -92,7 +76,7 @@ ScannerTokens scanner(char *source,int len){
             char *destOp =NULL;
             char *jumpOp=NULL;
             char charcur;
-            for(;(charcur=source[current],charcur!='\n');current++){
+            for(;(charcur=source[current],(charcur!='\n' && source[current]!=EOF));current++){
                 if(charcur=='='){
                     destOp=source + current;
                 }else if (charcur==';') {
@@ -100,7 +84,7 @@ ScannerTokens scanner(char *source,int len){
                 }
             }
             if(destOp){
-                clabel++;
+              clabel++;
               //create dest token
               const size_t lexemeLen=destOp-(&source[start]);
               //+1 for null character
