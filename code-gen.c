@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/_types/_null.h>
 
 
 typedef struct {
@@ -30,7 +31,7 @@ KeyValuePair jump_table[] = {
 };
 
 void fgenerate(ScannerTokens tokens, FILE * f){
-int i=0;
+unsigned int i=0,variable=16;
 while(i<tokens.len){
     enum tokenType curtt=tokens.arr[i]->tt;
     char hackMachineCode[HACK_MACHINE_WORD+1];
@@ -46,45 +47,75 @@ while(i<tokens.len){
         }else{
             //lookup id in table
             struct KVN *trow=getSymValue(tokens.arr[i]->lexeme);
-            assert(trow!=NULL);
-            strInt = trow->value;
+            if(trow!=NULL){
+                 strInt =  trow->value;
+            }else{
+                 strInt=variable;
+                 setSymValue(tokens.arr[i]->lexeme, variable++);
+            }
         }
         int startIndex=HACK_MACHINE_WORD-1,endIndex=1,shiftPlaces=0;
         for(; startIndex>=endIndex;(startIndex--,shiftPlaces++)){
             hackMachineCode[startIndex]=((strInt & 1<<shiftPlaces) > 0) ? '1':'0';
         }
-        fputs(hackMachineCode, f);
+        fprintf(f,"%s\n",hackMachineCode);
+        //genc++;
         i++;
     }else {
-        //c ins
-        char *dest=NULL;
-        char *comp=NULL;
-        char *jmp=NULL;
-        hackMachineCode[0]='1';
-        hackMachineCode[1]='1';
-        hackMachineCode[2]='1';
-        hackMachineCode[3]='0';
+        char *dest = NULL;
+        char *comp = NULL;
+        char *jmp = NULL;
+        hackMachineCode[0] = '1';
+        hackMachineCode[1] = '1';
+        hackMachineCode[2] = '1';
+        hackMachineCode[3] = '0';
 
-        int in=0;
-        for(;in<COMP_TABLE_SIZE && !(dest && comp && jmp);in++){
-            assert(tokens.arr[i]->tt==S_DEST);
-            dest=(strcmp(dest_table[in].key,tokens.arr[i]->lexeme)==0) ? dest_table[in].value : NULL;
-            assert(tokens.arr[i+1]->tt==S_COMP);
-            char *searchChar;
-             if((searchChar=strchr(tokens.arr[i+1]->lexeme,'M'))){
-               //replace M with A
-               *searchChar='A';
-               hackMachineCode[3]='1';
-           }
-            comp=(strcmp(comp_table[in].key,tokens.arr[i+1]->lexeme)==0) ? comp_table[in].value : NULL;
-            assert(tokens.arr[i+2]->tt==S_JMP);
-            jmp=(strcmp(jump_table[in].key,tokens.arr[i+2]->lexeme)==0) ? jump_table[in].value : NULL;
+        // Search dest_table
+        assert(tokens.arr[i]->tt == S_DEST);
+        {
+        for(int j = 0; j < DEST_TABLE_SIZE; j++) {
+            if(strcmp(dest_table[j].key, tokens.arr[i]->lexeme) == 0) {
+                dest = dest_table[j].value;
+                break;
+            }
         }
-        i=i+3;
+        }
+
+        // Search comp_table
+        assert(tokens.arr[i+1]->tt == S_COMP);
+        char comp_lexeme[4]; // Create a copy
+        strcpy(comp_lexeme, tokens.arr[i+1]->lexeme);
+        char *searchChar = strchr(comp_lexeme, 'M');
+        if(searchChar) {
+            *searchChar = 'A';
+            hackMachineCode[3] = '1';
+        }
+        {
+
+        for(int j = 0; j < COMP_TABLE_SIZE; j++) {
+            if(strcmp(comp_table[j].key, comp_lexeme) == 0) {
+                comp = comp_table[j].value;
+                break;
+            }
+        }
+        }
+
+        // Search jump_table
+        assert(tokens.arr[i+2]->tt == S_JMP);
+        {
+        for(int j = 0; j < JUMP_TABLE_SIZE; j++) {
+            if(strcmp(jump_table[j].key, tokens.arr[i+2]->lexeme) == 0) {
+                jmp = jump_table[j].value;
+                break;
+            }
+        }
+        }
+
         memcpy(hackMachineCode+DEST_HACK_START_INDEX,dest, DEST_HACK_LEN);
         memcpy(hackMachineCode+COMP_HACK_START_INDEX,comp, COMP_HACK_LEN);
         memcpy(hackMachineCode+JUMP_HACK_START_INDEX,jmp , JUMP_HACK_LEN);
-        fputs(hackMachineCode, f);
+        fprintf(f,"%s\n",hackMachineCode);
+        i=i+3;
     }
 }
 }
