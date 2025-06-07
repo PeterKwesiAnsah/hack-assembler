@@ -70,9 +70,7 @@ struct KVN *createKVN(struct KVN *head){
     }
     unsigned tableIndex=hash(key);
     struct KVN *cur=&hackLangTable.runtime[tableIndex];
-    if(cur->value==0){
-        return cur;
-    }
+
     while(cur){
         if(strcmp(key, cur->key)==0){
             return cur;
