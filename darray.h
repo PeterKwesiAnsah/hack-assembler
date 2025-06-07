@@ -13,8 +13,8 @@ typedef struct {   \
 #define append(slice,el,size) do{ \
     if (slice.len >= slice.cap) \
        { \
-        size_t allocap=slice.cap == 0 ? DEFAULT_SLICE_CAP: (2 * DEFAULT_SLICE_CAP);\
-        void *ptr = malloc(DEFAULT_SLICE_CAP*size); \
+        size_t allocap=slice.cap == 0 ? DEFAULT_SLICE_CAP: (2 * slice.cap);\
+        void *ptr = realloc(slice.arr,allocap*size); \
         if (ptr!=NULL) { \
             slice.cap=allocap;  \
             slice.arr=ptr;    \
