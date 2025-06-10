@@ -72,7 +72,7 @@ struct KVN *createKVN(struct KVN *head){
     struct KVN *cur=&hackLangTable.runtime[tableIndex];
 
     while(cur){
-        if(strcmp(key, cur->key)==0){
+        if(cur->key && strcmp(key, cur->key)==0){
             return cur;
         }
         cur=cur->next;
