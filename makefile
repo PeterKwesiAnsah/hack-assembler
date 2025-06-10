@@ -5,7 +5,7 @@ CC = gcc
 CFLAGS = -Wall -O2
 
 # Source files
-SRCS = tokenizer.c parser.c symbolTable.c assembler.c scanner.c code.c
+SRCS = assembler.c arena.c darray.c code-gen.c symbolTable.c lexical-scanner.c
 
 # Executable name
 TARGET = assembler
