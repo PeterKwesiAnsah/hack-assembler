@@ -1,12 +1,23 @@
 #include "symbolTable.h"
-#include "scanner.h"
-#include "tokenizer.h"
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#define FILL_KVN(node)  node->key=key;\
-                        node->value=value;\
-                        return node;\
+#include <stdio.h>
+
+#define TABLE_SIZE 57
+
+#define ASSERT_MALLOC(ptr,msg) do { \
+    if((ptr)==NULL){ \
+        fprintf(stderr, msg); \
+        exit(EXIT_FAILURE); \
+    } \
+} while(0)
+
+#define FILL_KVN(node) do { \
+    node->key=key; \
+    node->value=value; \
+    return node; \
+} while(0)
 
 
 struct symTable hackLangTable = {
@@ -86,8 +97,8 @@ struct KVN *setSymValue(char *key, unsigned int value){
     struct KVN *node=getSymValue(key);
     if(node==NULL){
      struct KVN *new=createKVN(head);
-      FILL_KVN(new)
+      FILL_KVN(new);
     }else{
-        FILL_KVN(node)
+        FILL_KVN(node);
     }
 };
