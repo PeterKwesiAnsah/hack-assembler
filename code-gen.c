@@ -111,6 +111,9 @@ while(i<tokens.len){
         }
         }
 
+        assert(dest);
+        assert(comp);
+        assert(jmp);
         memcpy(hackMachineCode+DEST_HACK_START_INDEX,dest, DEST_HACK_LEN);
         memcpy(hackMachineCode+COMP_HACK_START_INDEX,comp, COMP_HACK_LEN);
         memcpy(hackMachineCode+JUMP_HACK_START_INDEX,jmp , JUMP_HACK_LEN);
