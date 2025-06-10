@@ -16,7 +16,7 @@ ScannerTokens tkns={0,0,NULL};
 unsigned int line=0,clabel=-1;
 ScannerTokens scanner(char *source,int len){
     struct Arena *amemory=create_arena(1024);
-    struct symTable *table=initSymTable();
+    initSymTable();
     int start=0,current=0;
     while(current<len){
         start=current;
