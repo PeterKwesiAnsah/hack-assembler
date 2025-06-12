@@ -10,10 +10,7 @@ struct symTable {
     struct KVN predefined[PRE_DEFINED_TABLE_SIZE];
     struct KVN *runtime;
 };
-struct KVN *getSymValue(char *);
-struct KVN *setSymValue(char *,unsigned int);
-struct symTable *initSymTable(void);
+struct KVN *getSymValue(struct KVN *,char *);
+struct KVN *setSymValue(struct KVN *,char *,unsigned int);
+struct KVN  *initSymTable(void);
 #endif
-//int * get(const char *key)
-//void set (const char *key,int value)
-//int *find(const char *key)

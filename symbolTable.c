@@ -1,17 +1,14 @@
 #include "symbolTable.h"
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "arena.h"
+#include "darray.h"
+
 
 #define TABLE_SIZE 57
-
-#define ASSERT_MALLOC(ptr,msg) do { \
-    if((ptr)==NULL){ \
-        fprintf(stderr, msg); \
-        exit(EXIT_FAILURE); \
-    } \
-} while(0)
 
 #define FILL_KVN(node) do { \
     node->key=key; \
@@ -19,7 +16,7 @@
     return node; \
 } while(0)
 
-
+struct Arena * amemory;
 struct symTable hackLangTable = {
     .predefined = {
         {"R0", 0},
@@ -56,22 +53,21 @@ unsigned hash(const char *v){
     return h;
 }
 
-struct symTable *initSymTable(void){
-    hackLangTable.runtime=calloc(TABLE_SIZE,sizeof(*hackLangTable.runtime));
-    ASSERT_MALLOC(hackLangTable.runtime, "Failed to Initialize Symtable\n");
-    return &hackLangTable;
+struct KVN *initSymTable(void){
+  amemory=create_arena(65536);
+  hackLangTable.runtime = (struct KVN *)aalloc(amemory,(TABLE_SIZE*sizeof(struct KVN)));
+  return hackLangTable.runtime;
 };
 
 struct KVN *createKVN(struct KVN *head){
-    struct KVN *new=malloc(sizeof(*head));
-    ASSERT_MALLOC(new, "Failed to Create KVN\n");
+    struct KVN *new=aalloc(amemory,sizeof(*head));
     struct KVN *temp=head->next;
     head->next=new;
     new->next=temp;
     return new;
 };
 
- struct KVN  *getSymValue(char *key){
+ struct KVN  *getSymValue(struct KVN *rtable,char *key){
      if (!key) return NULL;
     //search and find in predefined table
     for (int i=0;i<PRE_DEFINED_TABLE_SIZE;i++){
@@ -80,7 +76,9 @@ struct KVN *createKVN(struct KVN *head){
         }
     }
     unsigned tableIndex=hash(key);
-    struct KVN *cur=&hackLangTable.runtime[tableIndex];
+    struct KVN *cur=&rtable[tableIndex];
+    //assert the initial cur is a valid head
+    assert(cur->value==0 && cur->next==NULL);
 
     while(cur){
         if(cur->key && strcmp(key, cur->key)==0){
@@ -91,10 +89,11 @@ struct KVN *createKVN(struct KVN *head){
     return NULL;
 };
 
-struct KVN *setSymValue(char *key, unsigned int value){
+struct KVN *setSymValue(struct KVN *rtable,char *key, unsigned int value){
     unsigned tableIndex=hash(key);
-    struct KVN *head=&hackLangTable.runtime[tableIndex];
-    struct KVN *node=getSymValue(key);
+    struct KVN *head=&rtable[tableIndex];
+    assert(head->value==0 && head->next==NULL);
+    struct KVN *node=getSymValue(rtable,key);
     if(node==NULL){
      struct KVN *new=createKVN(head);
       FILL_KVN(new);
