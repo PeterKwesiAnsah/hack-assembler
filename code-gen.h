@@ -16,5 +16,5 @@
 #define DEST_TABLE_SIZE 8
 #define JUMP_TABLE_SIZE 8
 #define CODE_GEN
-void fgenerate(ScannerTokens, FILE * );
+void fgenerate(ScannerTokens);
 #endif

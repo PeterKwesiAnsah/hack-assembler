@@ -29,8 +29,8 @@ KeyValuePair jump_table[] = {
     {"", "000"}, {"JGT", "001"},  {"JEQ", "010"},  {"JGE", "011"},
     {"JLT", "100"},  {"JNE", "101"},  {"JLE", "110"},  {"JMP", "111"}
 };
-
-void fgenerate(ScannerTokens tokens, FILE * f){
+extern struct symTable hackLangTable;
+void fgenerate(ScannerTokens tokens){
 unsigned int i=0,variable=16;
 while(i<tokens.len){
     enum tokenType curtt=tokens.arr[i]->tt;
@@ -46,19 +46,19 @@ while(i<tokens.len){
             strInt = strtoul(tokens.arr[i]->lexeme, &p_end, 10);
         }else{
             //lookup id in table
-            struct KVN *trow=getSymValue(tokens.arr[i]->lexeme);
+            struct KVN *trow=getSymValue(hackLangTable.runtime,tokens.arr[i]->lexeme);
             if(trow!=NULL){
                  strInt =  trow->value;
             }else{
                  strInt=variable;
-                 setSymValue(tokens.arr[i]->lexeme, variable++);
+                 setSymValue(hackLangTable.runtime,tokens.arr[i]->lexeme, variable++);
             }
         }
         int startIndex=HACK_MACHINE_WORD-1,endIndex=1,shiftPlaces=0;
         for(; startIndex>=endIndex;(startIndex--,shiftPlaces++)){
             hackMachineCode[startIndex]=((strInt & 1<<shiftPlaces) > 0) ? '1':'0';
         }
-        fprintf(f,"%s\n",hackMachineCode);
+        printf("%s\n",hackMachineCode);
         //genc++;
         i++;
     }else {
@@ -117,7 +117,7 @@ while(i<tokens.len){
         memcpy(hackMachineCode+DEST_HACK_START_INDEX,dest, DEST_HACK_LEN);
         memcpy(hackMachineCode+COMP_HACK_START_INDEX,comp, COMP_HACK_LEN);
         memcpy(hackMachineCode+JUMP_HACK_START_INDEX,jmp , JUMP_HACK_LEN);
-        fprintf(f,"%s\n",hackMachineCode);
+        printf("%s\n",hackMachineCode);
         i=i+3;
     }
 }
