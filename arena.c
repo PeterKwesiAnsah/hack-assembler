@@ -1,13 +1,13 @@
 #include "arena.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/_types/_null.h>
 
-#define MIN_ARENA_CAP 256
+//too mall
+#define MIN_ARENA_CAP 65536
 
 struct Arena * create_arena(size_t capacity){
     struct Arena *new=malloc(sizeof(struct Arena));
-    void *ptr=malloc(capacity);
+    void *ptr=calloc(1,capacity);
     if (ptr==NULL){
         fputs("Not enough memory", stderr);
         exit(1);
@@ -25,9 +25,11 @@ void * aalloc(struct Arena * arena,size_t size){
 
     struct Arena *avail=NULL;
 
+    size_t alignedsize=(size + 7) & ~7;
+
     while(current!=NULL){
         tail=current;
-        if(current->offset + size < current->cap){
+        if(current->offset + alignedsize < current->cap){
             avail=current;
             break;
         }
@@ -41,6 +43,6 @@ void * aalloc(struct Arena * arena,size_t size){
     }
     //allocate memory
     void *ptr=avail->memory + avail->offset;
-    avail->offset=avail->offset+size;
+    avail->offset=avail->offset+alignedsize;
     return ptr;
 }
