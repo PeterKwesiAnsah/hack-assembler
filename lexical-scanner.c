@@ -14,46 +14,28 @@
 ScannerTokens tkns={0,0,NULL};
 
 unsigned int line=0,clabel=-1;
-ScannerTokens scanner(FILE *source){
-    struct Arena *amemory=create_arena(65536);
-    struct KVN *rtable= initSymTable();
-    unsigned int start=0,pos=0;
-    char c='\0';
-    //we can have a pos variable to mimic ftell result
-    while((c=getchar(),pos++,c!=EOF)){
-
-        start=pos-1;
-
+ScannerTokens scanner(char *source,int len){
+    struct Arena *amemory=create_arena(1024);
+    struct KVN *table=initSymTable();
+    int start=0,current=0;
+    while(current<len){
+        start=current;
+        char c=source[current];
+        current++;
         switch (c) {
         case '@':{
             clabel++;
-            char cur=getchar();
-            pos++;
-            char isID=!isdigit(cur);
-            while((cur!='\n' && cur!=EOF )){
-                cur=getchar();
-                pos++;
-            };
-            line++;
-            //NB: it skips over new line
-            // (ftell(source))-1 gets you &source[current]
-            const size_t lexemeLen =(pos-1)-(start+1);
+            char isID=!isdigit(source[current]);
+            for(;(source[current]!='\n' && source[current]!=EOF );current++);
+            const size_t lexemeLen =(&source[current])-((&source[start])+1);
             //create ID or Number token
             // +1 for null character
             struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+(lexemeLen+1));
             tptr->tt=isID ? S_ID:S_NUMBER;
             tptr->lexeme = ((char *)tptr) + sizeof(struct token);
 
-            //copy from source (at which file position??)
-            // before read
-
-            fseek(source, start+1, SEEK_SET);
-
-            fread((((char *)tptr) + sizeof(struct token)), lexemeLen,1, source);
-
-            //restore file position
-            fseek(source, pos, SEEK_SET);
-
+            //copy from source
+            memcpy((((char *)tptr) + sizeof(struct token)),(&source[start])+1, lexemeLen);
             //null character
             tptr->lexeme[lexemeLen]='\0';
             tptr->len=lexemeLen;
@@ -64,40 +46,20 @@ ScannerTokens scanner(FILE *source){
         }
         case '(':{
             //Ldec
-            char cur=getchar();
-            pos++;
-            while((cur!=')' && cur!=EOF )){
-                cur=getchar();
-                pos++;
-            };
-            //ftell(source) is at ')'+1
-            char *lexeme=(char *)aalloc(amemory,((pos-1)-(start+1))+1);
-
-            //copy from source
-            // before read
-            //size_t ori_pos=ftell(source);
-            fseek(source, start+1, SEEK_SET);
-
-            fread(lexeme,((pos-1)-(start+1)),1,source);
-
-            //restore file position
-            fseek(source, pos, SEEK_SET);
-
-            unsigned int lexemeLen=((pos-1)-(start+1));
+            for(;(source[current]!=')');current++);
+            char *lexeme=(char *)aalloc(amemory,((&source[current])-(&source[start]+1))+1);
+            memcpy(lexeme,(&source[start]+1),((&source[current])-(&source[start]+1)));
+            const size_t lexemeLen=((&source[current])-(&source[start]+1));
             lexeme[lexemeLen]='\0';
             //build a symtable for label declaration
-            setSymValue(rtable, lexeme, clabel+1);
+            setSymValue(table, lexeme, clabel+1);
+            //skip over ')'
+            current++;
             break;
         }
          case '/':{
             //line comment
-            char cur=getchar();
-            pos++;
-            while((cur!='\n' && cur!=EOF )){
-                cur=getchar();
-                pos++;
-            };
-            line++;
+            for(;(source[current]!='\n' && source[current]!=EOF);current++);
             break;
          }
        	case ' ':
@@ -111,40 +73,27 @@ ScannerTokens scanner(FILE *source){
          break;
         default:{
             //find dest,jump operators
-            unsigned int destOp = 0;
-            unsigned int jumpOp = 0;
-            char cur=getchar();
-            pos++;
-            while((cur!='\n' && cur!=EOF )){
-                if(cur=='='){
-                    destOp=pos-1;
-                } else if (cur==';') {
-                   jumpOp= pos-1;
+            char *destOp =NULL;
+            char *jumpOp=NULL;
+            char charcur;
+            for(;(charcur=source[current],(charcur!='\n' && source[current]!=EOF));current++){
+                if(charcur=='='){
+                    destOp=source + current;
+                }else if (charcur==';') {
+                    jumpOp=source + current;
                 }
-                cur=getchar();
-                pos++;
-            };
-            line++;
-
+            }
             if(destOp){
               clabel++;
               //create dest token
-              unsigned int lexemeLen=destOp-start;
+              const size_t lexemeLen=destOp-(&source[start]);
               //+1 for null character
-              struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+((destOp-start)+1));
+              struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+(lexemeLen+1));
               tptr->tt=S_DEST;
               tptr->lexeme = ((char *)tptr) + sizeof(struct token);
 
               //copy from source
-              // before read
-              //size_t ori_pos=ftell(source);
-              fseek(source, start, SEEK_SET);
-
-              //assert(destOp-start < 20);
-              fread((((char *)tptr) + sizeof(struct token)), destOp-start,1, source);
-
-              //restore position
-              fseek(source, pos, SEEK_SET);
+              memcpy((((char *)tptr) + sizeof(struct token)),(&source[start]), lexemeLen);
               //null character
               tptr->lexeme[lexemeLen]='\0';
               tptr->len=lexemeLen;
@@ -153,26 +102,16 @@ ScannerTokens scanner(FILE *source){
               append(tkns, tptr, (sizeof(struct token *)));
               {
                   //create comp token
-                  // (pos is at '\n' + 1)
-                  unsigned int end = jumpOp==0 ? (pos-1): jumpOp;
-                  unsigned int lexemeLen=end-(destOp+1);
+                  char *end=jumpOp ? jumpOp: &source[current];
+                  const size_t lexemeLen=end-(destOp+1);
                   //+1 for null character
-                  struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+((end-(destOp+1))+1));
+                  struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+(lexemeLen+1));
                   tptr->tt=S_COMP;
                   tptr->lexeme = ((char *)tptr) + sizeof(struct token);
                   tptr->len=end-(destOp+1);
 
-                  //copy from source (at which file position??)
-                  // before read
-                  //size_t ori_pos=ftell(source);
-                  fseek(source, destOp+1, SEEK_SET);
-
-                  fread((((char *)tptr) + sizeof(struct token)), (end-(destOp+1)),1, source);
-
-                  //restore original position
-                  fseek(source, pos, SEEK_SET);
-
-
+                  //copy from source
+                  memcpy((((char *)tptr) + sizeof(struct token)),(destOp+1), lexemeLen);
                   //null character
                   tptr->lexeme[lexemeLen]='\0';
 
@@ -191,45 +130,34 @@ ScannerTokens scanner(FILE *source){
                 append(tkns, tptr, (sizeof(struct token *)));
             }
             if(jumpOp){
-                if(destOp==0){
+                //TODO: refactor as CREATE_COMP macro
+                if(!destOp){
                     //create comp token
+                    char *end=jumpOp;
+                    const size_t lexemeLen=end-(&source[start]);
                     //+1 for null character
-                    struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+((jumpOp-start)+1));
+                    struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+(lexemeLen+1));
                     tptr->tt=S_COMP;
                     tptr->lexeme = ((char *)tptr) + sizeof(struct token);
-                    tptr->len=jumpOp-start;
+                    tptr->len=end-(&source[start]);
 
                     //copy from source
-                    // before read
-                    //size_t ori_pos=ftell(source);
-                    fseek(source, start, SEEK_SET);
-
-                    fread((((char *)tptr) + sizeof(struct token)), (jumpOp-start),1, source);
-                    fseek(source, pos, SEEK_SET);
-
+                    memcpy((((char *)tptr) + sizeof(struct token)),(&source[start]), lexemeLen);
                     //null character
-                    tptr->lexeme[(jumpOp-start)]='\0';
+                    tptr->lexeme[lexemeLen]='\0';
 
                     //append to slice
                     append(tkns, tptr, (sizeof(struct token *)));
                 }
                 //create jump0p
-                //// (pos is at '\n' + 1)
-                unsigned int lexemeLen=(pos-1)-(jumpOp+1);
-                struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+((pos-1)-(jumpOp+1) + 1));
+                const size_t lexemeLen=&source[current]-(jumpOp+1);
+                struct token *tptr=(struct token *)aalloc(amemory, sizeof(struct token)+(lexemeLen + 1));
                 tptr->tt=S_JMP;
                 tptr->lexeme = ((char *)tptr) + sizeof(struct token);
-                tptr->len=(pos-1)-(jumpOp+1);
+                tptr->len=&source[current]-(jumpOp+1);
 
                 //copy from source
-                //before read
-                //size_t ori_pos=ftell(source);
-                fseek(source, jumpOp+1, SEEK_SET);
-
-                fread((((char *)tptr) + sizeof(struct token)), (pos-1)-(jumpOp+1), 1,source);
-
-                //restore original position
-                fseek(source,pos,SEEK_SET);
+                memcpy((((char *)tptr) + sizeof(struct token)),(jumpOp+1), lexemeLen);
                 //null character
                 tptr->lexeme[lexemeLen]='\0';
 

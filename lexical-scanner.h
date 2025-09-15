@@ -12,5 +12,5 @@ struct token {
 };
 //create tokens slice type
 slice(struct token *, ScannerTokens)
-ScannerTokens scanner(FILE *source);
+ScannerTokens scanner(char *, int);
 #endif
