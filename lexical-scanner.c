@@ -20,18 +20,18 @@ ScannerTokens scanner(FILE *source){
     unsigned int start=0,pos=0;
     char c='\0';
     //we can have a pos variable to mimic ftell result
-    while((c=getchar(),pos++,c!=EOF)){
+    while((c=fgetc(source),pos++,c!=EOF)){
 
         start=pos-1;
 
         switch (c) {
         case '@':{
             clabel++;
-            char cur=getchar();
+            char cur=fgetc(source);
             pos++;
             char isID=!isdigit(cur);
             while((cur!='\n' && cur!=EOF )){
-                cur=getchar();
+                cur=fgetc(source);
                 pos++;
             };
             line++;
@@ -64,10 +64,10 @@ ScannerTokens scanner(FILE *source){
         }
         case '(':{
             //Ldec
-            char cur=getchar();
+            char cur=fgetc(source);
             pos++;
             while((cur!=')' && cur!=EOF )){
-                cur=getchar();
+                cur=fgetc(source);
                 pos++;
             };
             //ftell(source) is at ')'+1
@@ -91,10 +91,10 @@ ScannerTokens scanner(FILE *source){
         }
          case '/':{
             //line comment
-            char cur=getchar();
+            char cur=fgetc(source);
             pos++;
             while((cur!='\n' && cur!=EOF )){
-                cur=getchar();
+                cur=fgetc(source);
                 pos++;
             };
             line++;
@@ -113,7 +113,7 @@ ScannerTokens scanner(FILE *source){
             //find dest,jump operators
             unsigned int destOp = 0;
             unsigned int jumpOp = 0;
-            char cur=getchar();
+            char cur=fgetc(source);
             pos++;
             while((cur!='\n' && cur!=EOF )){
                 if(cur=='='){
@@ -121,7 +121,7 @@ ScannerTokens scanner(FILE *source){
                 } else if (cur==';') {
                    jumpOp= pos-1;
                 }
-                cur=getchar();
+                cur=fgetc(source);
                 pos++;
             };
             line++;
