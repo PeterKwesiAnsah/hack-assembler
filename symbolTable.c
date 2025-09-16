@@ -78,7 +78,7 @@ struct KVN *createKVN(struct KVN *head){
     unsigned tableIndex=hash(key);
     struct KVN *cur=&rtable[tableIndex];
     //assert the initial cur is a valid head
-    assert(cur->value==0 && cur->next==NULL);
+    assert(cur->value==0);
 
     while(cur){
         if(cur->key && strcmp(key, cur->key)==0){
@@ -92,7 +92,7 @@ struct KVN *createKVN(struct KVN *head){
 struct KVN *setSymValue(struct KVN *rtable,char *key, unsigned int value){
     unsigned tableIndex=hash(key);
     struct KVN *head=&rtable[tableIndex];
-    assert(head->value==0 && head->next==NULL);
+    assert(head->value==0);
     struct KVN *node=getSymValue(rtable,key);
     if(node==NULL){
      struct KVN *new=createKVN(head);
